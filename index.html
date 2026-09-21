@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Magic 100</title>
+
+  <!-- Inter from Google Fonts. If it fails to load, style.css falls back to a system sans-serif. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <noscript>
+    <p class="noscript">This game needs JavaScript turned on to run.</p>
+  </noscript>
+
+  <!-- ==================================================================
+       SCREEN 1: START
+       Only one ".screen" is visible at a time. script.js adds/removes
+       the "is-visible" class to switch between them.
+       ================================================================== -->
+  <section id="screen-start" class="screen is-visible">
+    <div class="centered">
+      <h1 class="title">The Magic 100</h1>
+      <p class="tagline">Pick cards that add up to as close to $100 as you can. Faster = more points.</p>
+      <button id="start-button" class="button button--big" type="button">Start</button>
+    </div>
+  </section>
+
+  <!-- ==================================================================
+       SCREEN 2: LOADING
+       ================================================================== -->
+  <section id="screen-loading" class="screen">
+    <div class="centered">
+      <h2 class="heading">Loading cards…</h2>
+      <p class="muted">Pulling 100 random cards from Scryfall. This takes a few seconds.</p>
+    </div>
+  </section>
+
+  <!-- ==================================================================
+       SCREEN 3: ERROR
+       ================================================================== -->
+  <section id="screen-error" class="screen">
+    <div class="centered">
+      <h2 class="heading">Couldn't load the cards</h2>
+      <p id="error-message" class="muted">Something went wrong talking to Scryfall.</p>
+      <button id="retry-button" class="button" type="button">Try again</button>
+    </div>
+  </section>
+
+  <!-- ==================================================================
+       SCREEN 4: THE GAME
+       ================================================================== -->
+  <section id="screen-game" class="screen">
+
+    <!-- This bar sticks to the top of the window while the grid scrolls. -->
+    <header class="hud">
+      <div class="hud__timer">
+        <span id="timer" class="timer">3:00</span>
+      </div>
+      <div class="hud__right">
+        <span class="hud__count"><strong id="selected-count">0</strong> selected</span>
+        <button id="submit-button" class="button" type="button">Submit</button>
+      </div>
+    </header>
+
+    <main>
+      <!-- script.js fills this with 100 card buttons. -->
+      <div id="card-grid" class="grid"></div>
+    </main>
+  </section>
+
+  <!-- ==================================================================
+       SCREEN 5: RESULTS
+       ================================================================== -->
+  <section id="screen-results" class="screen">
+    <div class="results">
+      <h2 class="heading">Round over</h2>
+
+      <p class="score"><span id="final-score">0.0</span><span class="score__outof"> / 100</span></p>
+
+      <dl class="stats">
+        <div class="stat"><dt>You spent</dt><dd id="stat-total">$0.00</dd></div>
+        <div class="stat"><dt>Target</dt><dd id="stat-target">$100.00</dd></div>
+        <div class="stat"><dt>Off by</dt><dd id="stat-difference">$0.00</dd></div>
+        <div class="stat"><dt>Time used</dt><dd id="stat-time">0:00</dd></div>
+        <div class="stat"><dt>Cards picked</dt><dd id="stat-picked">0</dd></div>
+        <div class="stat"><dt>Points</dt><dd id="stat-breakdown">0.0 accuracy + 0.0 speed</dd></div>
+      </dl>
+
+      <h3 class="subheading">Your picks, most expensive first</h3>
+      <div id="picks-grid" class="grid grid--results"></div>
+
+      <button id="play-again-button" class="button button--big" type="button">Play Again</button>
+    </div>
+  </section>
+
+  <!-- ==================================================================
+       FOOTER (always visible)
+       ================================================================== -->
+  <footer class="footer">
+    Card data and images from Scryfall. Magic: The Gathering is &copy; Wizards of the Coast.
+    Not affiliated with or endorsed by Wizards of the Coast.
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

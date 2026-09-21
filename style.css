@@ -1,0 +1,386 @@
+/* =========================================================================
+   The Magic 100 — styles
+   Black and white only. White background, black text, thin black borders.
+   ========================================================================= */
+
+/* ---- Design tokens ------------------------------------------------------
+   Change a value here and it updates everywhere it is used.
+   ------------------------------------------------------------------------ */
+:root {
+  --ink: #000;                 /* all text and borders */
+  --paper: #fff;               /* all backgrounds */
+  --hairline: 1px solid #000;  /* the thin border used throughout */
+  --gap: 10px;                 /* space between cards in the grid */
+  --page-padding: 24px;
+  --max-width: 1240px;
+}
+
+/* ---- Reset --------------------------------------------------------------
+   border-box means padding and borders count INSIDE an element's width,
+   which keeps the card grid from shifting when a card gets a thicker border.
+   ------------------------------------------------------------------------ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.noscript {
+  padding: var(--page-padding);
+  border-bottom: var(--hairline);
+  font-weight: 600;
+}
+
+/* ---- Screens ------------------------------------------------------------
+   Every screen is hidden by default. script.js adds "is-visible" to
+   exactly one of them at a time.
+   ------------------------------------------------------------------------ */
+.screen {
+  display: none;
+}
+
+.screen.is-visible {
+  display: block;
+}
+
+/* A simple vertically-centred block, used by the start/loading/error screens. */
+.centered {
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: var(--page-padding);
+  text-align: center;
+}
+
+/* ---- Typography --------------------------------------------------------- */
+.title {
+  margin: 0;
+  font-size: clamp(2.75rem, 11vw, 6rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.heading {
+  margin: 0;
+  font-size: clamp(1.5rem, 5vw, 2.25rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.subheading {
+  margin: 56px 0 16px;
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.tagline {
+  margin: 0;
+  max-width: 34ch;
+  font-size: clamp(1rem, 2.5vw, 1.15rem);
+}
+
+.muted {
+  margin: 0;
+  max-width: 42ch;
+  opacity: 0.65;
+}
+
+/* ---- Buttons ------------------------------------------------------------ */
+.button {
+  appearance: none;
+  background: var(--paper);
+  color: var(--ink);
+  border: var(--hairline);
+  border-radius: 0;
+  padding: 10px 22px;
+  font: inherit;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 0.12s linear, color 0.12s linear;
+}
+
+/* Hover/focus inverts the button: black fill, white text. */
+.button:hover,
+.button:focus-visible {
+  background: var(--ink);
+  color: var(--paper);
+  outline: none;
+}
+
+.button--big {
+  padding: 16px 48px;
+  font-size: 1.125rem;
+}
+
+/* ---- The sticky heads-up display (timer + count + submit) --------------- */
+.hud {
+  position: sticky;   /* stays pinned to the top while the grid scrolls */
+  top: 0;
+  z-index: 10;
+  background: var(--paper);
+  border-bottom: var(--hairline);
+  padding: 12px var(--page-padding);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.timer {
+  display: inline-block;
+  font-size: clamp(2.25rem, 7vw, 3.5rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums; /* digits keep the same width, so it doesn't jiggle */
+}
+
+/* Under 30 seconds the timer inverts so it is impossible to miss. */
+.timer.is-low {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 0 0.15em;
+}
+
+.hud__right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.hud__count {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ---- The card grid ------------------------------------------------------
+   Columns get wider as the screen gets wider. Edit these numbers to change
+   how many cards sit on a row.
+   ------------------------------------------------------------------------ */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* phones */
+  gap: var(--gap);
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: var(--page-padding);
+}
+
+@media (min-width: 480px)  { .grid { grid-template-columns: repeat(4, 1fr); } }
+@media (min-width: 700px)  { .grid { grid-template-columns: repeat(6, 1fr); } }
+@media (min-width: 1000px) { .grid { grid-template-columns: repeat(8, 1fr); } }
+@media (min-width: 1200px) { .grid { grid-template-columns: repeat(10, 1fr); } }
+
+/* ---- A single card ------------------------------------------------------ */
+.card {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  background: var(--paper);
+  border: var(--hairline);
+  border-radius: 0;
+  cursor: pointer;
+  overflow: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+  /* No transition here on purpose: selecting a card should feel instant, and
+     animating border-width would re-layout all 100 cards on every frame. */
+}
+
+.card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 488 / 680;  /* real Magic card proportions, so the grid never jumps */
+  object-fit: cover;
+  background: var(--paper);
+  font-size: 0.7rem;        /* styles the alt text if an image fails to load */
+}
+
+.card:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* Selected: thick black frame, the art dims, and a black tick appears. */
+.card.is-selected {
+  border-width: 5px;
+  background: var(--ink);
+}
+
+.card.is-selected img {
+  opacity: 0.45;
+}
+
+.card.is-selected::after {
+  content: "✓";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* ---- Results screen ----------------------------------------------------- */
+.results {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 56px var(--page-padding);
+  text-align: center;
+}
+
+.score {
+  margin: 24px 0 40px;
+  font-size: clamp(3.5rem, 16vw, 8rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.score__outof {
+  font-size: 0.3em;
+  font-weight: 600;
+  letter-spacing: 0;
+  opacity: 0.55;
+}
+
+.stats {
+  margin: 0 auto;
+  max-width: 640px;
+  border-top: var(--hairline);
+  text-align: left;
+}
+
+.stat {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: var(--hairline);
+}
+
+.stat dt {
+  opacity: 0.65;
+}
+
+.stat dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* The results grid reuses .grid but each card carries a price underneath. */
+.grid--results {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.pick {
+  text-align: center;
+}
+
+.pick img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 488 / 680;
+  object-fit: cover;
+  border: var(--hairline);
+  background: var(--paper);
+  font-size: 0.7rem;
+}
+
+.pick__price {
+  display: block;
+  padding-top: 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.empty-note {
+  grid-column: 1 / -1;
+  padding: 32px 0;
+  opacity: 0.65;
+}
+
+/* ---- Footer ------------------------------------------------------------- */
+.footer {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 32px var(--page-padding) 40px;
+  border-top: var(--hairline);
+  font-size: 0.75rem;
+  line-height: 1.6;
+  opacity: 0.6;
+  text-align: center;
+}
+
+/* ---- Small screens ------------------------------------------------------ */
+@media (max-width: 520px) {
+  :root {
+    --page-padding: 14px;
+    --gap: 8px;
+  }
+
+  /* Keep the timer bar to a single row on phones. It is sticky, so every
+     extra row it takes is screen space the card grid never gets back. */
+  .hud {
+    padding: 10px var(--page-padding);
+    gap: 10px;
+    flex-wrap: nowrap;
+  }
+
+  .hud__right {
+    gap: 10px;
+  }
+
+  .hud__count {
+    font-size: 0.875rem;
+  }
+
+  .hud .button {
+    padding: 8px 14px;
+  }
+}
+
+/* Respect people who ask their device to reduce motion. */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
