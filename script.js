@@ -234,14 +234,16 @@ function getCardPrice(card) {
  * Most cards have image_uris. Double-faced cards (transform, modal DFCs)
  * don't — their images live on each face instead, so we use the front face.
  */
-function getCardImage(card) {
-  if (card.image_uris && card.image_uris[SETTINGS.IMAGE_SIZE]) {
-    return card.image_uris[SETTINGS.IMAGE_SIZE];
+function getCardImage(card, size) {
+  const wanted = size || SETTINGS.IMAGE_SIZE;
+
+  if (card.image_uris && card.image_uris[wanted]) {
+    return card.image_uris[wanted];
   }
 
   const frontFace = card.card_faces ? card.card_faces[0] : null;
-  if (frontFace && frontFace.image_uris && frontFace.image_uris[SETTINGS.IMAGE_SIZE]) {
-    return frontFace.image_uris[SETTINGS.IMAGE_SIZE];
+  if (frontFace && frontFace.image_uris && frontFace.image_uris[wanted]) {
+    return frontFace.image_uris[wanted];
   }
 
   return null;
@@ -310,27 +312,35 @@ async function loadCards() {
         name: card.name,
         price: price,
         image: image,
+        // A second, smaller URL to try if the main image won't load.
+        imageFallback: getCardImage(card, "small"),
       });
     });
   }
 
-  for (const page of pagesToFetch) {
-    // Scryfall's rate limit: wait between requests.
-    await sleep(SETTINGS.REQUEST_GAP_MS);
+  // Page 1 is already in hand, so use it rather than throwing it away.
+  addUsableCards(firstPage.data);
+
+  // Start each remaining request 120ms after the previous one, but DON'T wait
+  // for one to finish before starting the next. The gap still respects
+  // Scryfall's rate limit, while the requests themselves overlap -- so loading
+  // takes about as long as the slowest request instead of the sum of them all.
+  const pageRequests = pagesToFetch.map(async function (page, index) {
+    await sleep((index + 1) * SETTINGS.REQUEST_GAP_MS);
 
     try {
       const json = await fetchSearchPage(page);
-      addUsableCards(json.data);
+      return json.data;
     } catch (error) {
-      // One bad page shouldn't ruin the round — log it and carry on.
+      // One bad page shouldn't ruin the round -- log it and carry on.
       console.warn("Skipping page " + page + ":", error);
+      return [];
     }
-  }
+  });
 
-  // If the random pages came up short, top the pool up from page 1.
-  if (pool.length < SETTINGS.CARDS_ON_SCREEN) {
-    addUsableCards(firstPage.data);
-  }
+  // Promise.all waits for every request, but they ran side by side.
+  const pagesOfCards = await Promise.all(pageRequests);
+  pagesOfCards.forEach(addUsableCards);
 
   if (pool.length < SETTINGS.CARDS_ON_SCREEN) {
     throw new Error(
@@ -368,10 +378,30 @@ function renderCardGrid() {
 
     const image = document.createElement("img");
     image.src = card.image;
-    image.alt = card.name;       // shown if the image fails to load
+    image.alt = card.name;
     image.loading = "lazy";      // don't download images until they scroll into view
     image.decoding = "async";
     image.draggable = false;
+
+    // If the picture won't load, try the smaller version once, and if that
+    // fails too show the card's name. A named box is still playable; an empty
+    // box is not.
+    let triedFallback = false;
+    image.addEventListener("error", function () {
+      if (!triedFallback && card.imageFallback && card.imageFallback !== card.image) {
+        triedFallback = true;
+        image.src = card.imageFallback;
+        return;
+      }
+
+      image.remove();
+      button.classList.add("card--no-image");
+
+      const label = document.createElement("span");
+      label.className = "card__name";
+      label.textContent = card.name;
+      button.appendChild(label);
+    });
 
     button.appendChild(image);
     fragment.appendChild(button);

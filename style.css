@@ -226,6 +226,24 @@ body {
   outline-offset: 2px;
 }
 
+/* Shown when a card's picture won't load: the name, so the card is still
+   identifiable and the round stays playable. */
+.card--no-image {
+  aspect-ratio: 488 / 680;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+}
+
+.card__name {
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+  word-break: break-word;
+}
+
 /* Selected: thick black frame, the art dims, and a black tick appears. */
 .card.is-selected {
   border-width: 5px;
