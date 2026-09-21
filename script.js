@@ -36,6 +36,11 @@ const SETTINGS = {
   // More pages = more variety, but a slightly longer load.
   PAGES_TO_SAMPLE: 3,
 
+  // The 100 cards on screen must be worth at least this many times the target,
+  // so reaching $100 is not just possible but possible in several different
+  // ways. At 1.0 a round could need nearly every card; 2.5 leaves real choice.
+  MIN_POOL_MULTIPLE: 2.5,
+
   // Which Scryfall image size to use.
   // "normal" looks best. "small" loads roughly 10x faster — worth switching
   // to if the grid feels slow, especially on a phone.
@@ -349,8 +354,52 @@ async function loadCards() {
     );
   }
 
+  return chooseRoundCards(pool);
+}
+
+/**
+ * Choose the cards for one round from the larger pool.
+ *
+ * A plain random 100 is usually fine, but an unlucky all-cheap draw could add
+ * up to less than the target and deal a round nobody can win. So: take a
+ * random 100, and if they are not collectively worth enough, trade the
+ * cheapest of them for the most expensive cards left over until they are.
+ */
+function chooseRoundCards(pool) {
   shuffle(pool);
-  return pool.slice(0, SETTINGS.CARDS_ON_SCREEN);
+
+  const chosen = pool.slice(0, SETTINGS.CARDS_ON_SCREEN);
+  const spares = pool.slice(SETTINGS.CARDS_ON_SCREEN);
+  const floor = SETTINGS.TARGET_PRICE * SETTINGS.MIN_POOL_MULTIPLE;
+
+  let total = chosen.reduce(function (sum, card) {
+    return sum + card.price;
+  }, 0);
+
+  if (total >= floor) {
+    return chosen;
+  }
+
+  // Line the cheapest chosen cards up against the priciest spares, then trade
+  // one for one until the round is worth enough.
+  chosen.sort(function (a, b) { return a.price - b.price; });
+  spares.sort(function (a, b) { return b.price - a.price; });
+
+  for (let i = 0; i < chosen.length && i < spares.length && total < floor; i++) {
+    // Both lists are ordered, so once a trade stops helping, none of the
+    // later ones would either.
+    if (spares[i].price <= chosen[i].price) {
+      break;
+    }
+
+    total += spares[i].price - chosen[i].price;
+    chosen[i] = spares[i];
+  }
+
+  // IMPORTANT: shuffle again before handing these back. The lists above are
+  // sorted by price, and showing the grid in price order would give away
+  // every card's value at a glance.
+  return shuffle(chosen);
 }
 
 
