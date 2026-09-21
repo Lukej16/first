@@ -48,6 +48,11 @@ const SETTINGS = {
   // Scryfall asks for at least 100ms between requests. We use a little more
   // than that to stay comfortably inside their rules.
   REQUEST_GAP_MS: 120,
+
+  // Give up on a request that stalls. Without this, anything that silently
+  // swallows the request (a dropped connection, a blocking extension, a
+  // sandboxed page) leaves the player staring at "Loading cards..." forever.
+  REQUEST_TIMEOUT_MS: 10000,
 };
 
 // Scryfall constants — these describe the API, so leave them alone.
@@ -160,24 +165,55 @@ function buildSearchUrl(page) {
   return SCRYFALL_SEARCH_URL + "?" + params.toString();
 }
 
-/** Fetch a single page of search results. Throws if anything goes wrong. */
+/**
+ * Fetch a single page of search results. Throws if anything goes wrong.
+ *
+ * An AbortController is the browser's way of cancelling a request. We start a
+ * timer alongside the request; if the timer fires first it aborts the fetch,
+ * so a stalled request fails with a clear message instead of hanging forever.
+ */
 async function fetchSearchPage(page) {
-  const response = await fetch(buildSearchUrl(page), {
-    headers: { Accept: "application/json" },
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(function () {
+    controller.abort();
+  }, SETTINGS.REQUEST_TIMEOUT_MS);
 
-  if (!response.ok) {
-    throw new Error("Scryfall responded with status " + response.status + ".");
+  try {
+    const response = await fetch(buildSearchUrl(page), {
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error("Scryfall responded with status " + response.status + ".");
+    }
+
+    const json = await response.json();
+
+    // Scryfall can return a 200 with an error object inside it.
+    if (json.object === "error") {
+      throw new Error(json.details || "Scryfall returned an error.");
+    }
+
+    return json;
+  } catch (error) {
+    // Aborting makes fetch throw, so turn that into something readable.
+    if (error && error.name === "AbortError") {
+      const seconds = Math.max(1, Math.round(SETTINGS.REQUEST_TIMEOUT_MS / 1000));
+      const timeout = new Error(
+        "Scryfall didn't respond within " + seconds + " seconds."
+      );
+      // Keep the name so the code that shows the error screen can still tell
+      // this was a connection problem rather than a bad response.
+      timeout.name = "AbortError";
+      throw timeout;
+    }
+    throw error;
+  } finally {
+    // Runs whether the request succeeded or failed, so the timer is never left
+    // running and can't abort a later request by mistake.
+    clearTimeout(timeoutId);
   }
-
-  const json = await response.json();
-
-  // Scryfall can return a 200 with an error object inside it.
-  if (json.object === "error") {
-    throw new Error(json.details || "Scryfall returned an error.");
-  }
-
-  return json;
 }
 
 /**
@@ -551,16 +587,19 @@ async function startGame() {
   } catch (error) {
     console.error(error);
 
-    // fetch() throws a TypeError when the browser can't reach the network at
-    // all, so that's the one case where "check your connection" is useful advice.
-    const isNetworkProblem = Boolean(error) && error.name === "TypeError";
+    // fetch() throws a TypeError when the request never reaches the network.
+    // That means offline, but it also means "something blocked it" -- a browser
+    // extension, a network policy, or a sandboxed page that isn't allowed to
+    // call out. Those look identical from here, so the advice covers both.
+    const couldNotReachScryfall =
+      Boolean(error) && (error.name === "TypeError" || error.name === "AbortError");
 
     let detail = error && error.message ? error.message : "Something went wrong.";
     if (!/[.!?]$/.test(detail)) detail += ".";
 
     $("error-message").textContent = detail + " " +
-      (isNetworkProblem
-        ? "Check your internet connection and try again."
+      (couldNotReachScryfall
+        ? "You may be offline, or something may be blocking the request to Scryfall."
         : "Please try again in a moment.");
 
     showScreen("screen-error");
