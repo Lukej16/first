@@ -143,11 +143,21 @@ body {
   background: var(--paper);
   border-bottom: var(--hairline);
   padding: 12px var(--page-padding);
-  display: flex;
+  /* Three columns with equal outer ones, so the sort buttons sit dead centre
+     no matter how wide the timer or the Submit side happen to be. */
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.hud__timer {
+  justify-self: start;
+}
+
+.hud__sort {
+  justify-self: center;
+  display: flex;
 }
 
 .timer {
@@ -167,9 +177,47 @@ body {
 }
 
 .hud__right {
+  justify-self: end;
   display: flex;
   align-items: center;
   gap: 16px;
+}
+
+/* The sort buttons read as one joined control: shared borders, no gaps. */
+.sort-button {
+  appearance: none;
+  background: var(--paper);
+  color: var(--ink);
+  border: var(--hairline);
+  border-right-width: 0;
+  border-radius: 0;
+  padding: 8px 14px;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.sort-button:last-child {
+  border-right-width: 1px;
+}
+
+.sort-button:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.sort-button:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  position: relative;   /* so the outline isn't clipped by its neighbours */
+}
+
+/* The sort currently in use is filled in. */
+.sort-button.is-active {
+  background: var(--ink);
+  color: var(--paper);
 }
 
 .hud__count {
@@ -369,18 +417,42 @@ body {
 }
 
 /* ---- Small screens ------------------------------------------------------ */
+/* Narrow screens: the three-across bar stops fitting, so the sort buttons
+   drop onto their own full-width row under the timer. */
+@media (max-width: 760px) {
+  .hud {
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      "timer right"
+      "sort  sort";
+    row-gap: 10px;
+  }
+
+  .hud__timer { grid-area: timer; }
+  .hud__right { grid-area: right; }
+
+  .hud__sort {
+    grid-area: sort;
+    justify-self: stretch;
+  }
+
+  /* Share the row evenly rather than sizing to the words. */
+  .sort-button {
+    flex: 1;
+    padding: 8px 4px;
+    text-align: center;
+  }
+}
+
 @media (max-width: 520px) {
   :root {
     --page-padding: 14px;
     --gap: 8px;
   }
 
-  /* Keep the timer bar to a single row on phones. It is sticky, so every
-     extra row it takes is screen space the card grid never gets back. */
   .hud {
     padding: 10px var(--page-padding);
-    gap: 10px;
-    flex-wrap: nowrap;
+    row-gap: 8px;
   }
 
   .hud__right {
@@ -393,6 +465,10 @@ body {
 
   .hud .button {
     padding: 8px 14px;
+  }
+
+  .sort-button {
+    font-size: 0.75rem;
   }
 }
 

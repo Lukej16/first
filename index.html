@@ -62,6 +62,16 @@
       <div class="hud__timer">
         <span id="timer" class="timer">3:00</span>
       </div>
+
+      <!-- Re-orders the grid. Sorting never changes which cards you were
+           dealt, and never clears what you have selected. -->
+      <div class="hud__sort" role="group" aria-label="Sort the cards">
+        <button class="sort-button is-active" type="button" data-sort="random" aria-pressed="true">Shuffle</button>
+        <button class="sort-button" type="button" data-sort="color" aria-pressed="false">Color</button>
+        <button class="sort-button" type="button" data-sort="year" aria-pressed="false">Year</button>
+        <button class="sort-button" type="button" data-sort="rarity" aria-pressed="false">Rarity</button>
+      </div>
+
       <div class="hud__right">
         <span class="hud__count"><strong id="selected-count">0</strong> selected</span>
         <button id="submit-button" class="button" type="button">Submit</button>

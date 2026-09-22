@@ -123,8 +123,10 @@ function roundToCents(amount) {
    Everything the game needs to remember while it runs lives in here.
    ========================================================================= */
 const state = {
-  cards: [],                 // the 100 cards currently on screen
+  cards: [],                 // the 100 cards currently on screen, in dealt order
   selectedIds: new Set(),    // the ids of the cards the player has clicked
+  cardElements: {},          // card id -> its button on the page, for re-sorting
+  sortKey: "random",         // which sort button is currently active
   roundEndsAt: 0,            // a timestamp (ms) for when the timer hits zero
   timerId: null,             // the id returned by setInterval, so we can stop it
   roundIsOver: false,        // guards against submitting twice
@@ -319,6 +321,10 @@ async function loadCards() {
         image: image,
         // A second, smaller URL to try if the main image won't load.
         imageFallback: getCardImage(card, "small"),
+        // Worked out once here so sorting later is just comparing numbers.
+        colorRank: colorSortRank(card),
+        year: releaseYear(card),
+        rarityRank: raritySortRank(card),
       });
     });
   }
@@ -403,6 +409,64 @@ function chooseRoundCards(pool) {
 }
 
 
+/* -------------------------------------------------------------------------
+   Reading the bits of a card we let players sort by.
+   These run once per card while the round loads.
+   ---------------------------------------------------------------------- */
+
+// Magic's conventional colour order: White, Blue, Black, Red, Green.
+const COLOR_ORDER = ["W", "U", "B", "R", "G"];
+
+// Most to least rare. Odd rarities ("special", "bonus") fall to the end.
+const RARITY_ORDER = ["mythic", "rare", "uncommon", "common"];
+
+/** A card's colours. Double-faced cards keep theirs on the front face. */
+function getCardColors(card) {
+  if (Array.isArray(card.colors)) {
+    return card.colors;
+  }
+
+  const frontFace = card.card_faces ? card.card_faces[0] : null;
+  if (frontFace && Array.isArray(frontFace.colors)) {
+    return frontFace.colors;
+  }
+
+  // Last resort: colour identity is always present.
+  return Array.isArray(card.color_identity) ? card.color_identity : [];
+}
+
+/**
+ * Sort position for colour: the five colours in WUBRG order (0-4), then every
+ * multicolour card together (5), then colourless cards, artifacts and lands (6).
+ */
+function colorSortRank(card) {
+  const colors = getCardColors(card);
+
+  if (colors.length === 0) return 6;   // colourless, artifacts, lands
+  if (colors.length > 1) return 5;     // all multicolour grouped together
+
+  const position = COLOR_ORDER.indexOf(colors[0]);
+  return position === -1 ? 6 : position;
+}
+
+/** The year a card was printed, from Scryfall's "2019-07-12" style date. */
+function releaseYear(card) {
+  const released = card.released_at;
+  if (typeof released !== "string" || released.length < 4) {
+    return 0;
+  }
+
+  const year = parseInt(released.slice(0, 4), 10);
+  return Number.isFinite(year) ? year : 0;
+}
+
+/** Sort position for rarity: mythic first, common last. */
+function raritySortRank(card) {
+  const position = RARITY_ORDER.indexOf(card.rarity);
+  return position === -1 ? RARITY_ORDER.length : position;
+}
+
+
 /* =========================================================================
    4. BUILDING THE CARD GRID
    ========================================================================= */
@@ -411,6 +475,7 @@ function chooseRoundCards(pool) {
 function renderCardGrid() {
   const grid = $("card-grid");
   grid.innerHTML = "";
+  state.cardElements = {};
 
   // A DocumentFragment lets us build all 100 buttons off-screen and insert
   // them in one go, which is much faster than adding them one at a time.
@@ -454,6 +519,10 @@ function renderCardGrid() {
 
     button.appendChild(image);
     fragment.appendChild(button);
+
+    // Keep a handle on the button so sorting can move it without rebuilding
+    // it (rebuilding would re-download every image).
+    state.cardElements[card.id] = button;
   });
 
   grid.appendChild(fragment);
@@ -479,6 +548,77 @@ function toggleCard(button) {
   }
 
   $("selected-count").textContent = String(state.selectedIds.size);
+}
+
+
+/* -------------------------------------------------------------------------
+   Sorting the grid.
+
+   Sorting only moves cards around. It never changes which cards you were
+   dealt, and it never touches what you have already selected.
+   ---------------------------------------------------------------------- */
+
+// How each button orders the grid. "random" has no comparison because it means
+// "leave them in the order they were dealt".
+const SORTS = {
+  random: null,
+  color: function (a, b) { return a.colorRank - b.colorRank; },
+  year: function (a, b) { return b.year - a.year; },        // newest first
+  rarity: function (a, b) { return a.rarityRank - b.rarityRank; },
+};
+
+/** The round's cards in the order a given button wants them. */
+function sortedCards(sortKey) {
+  // Copy first: state.cards must keep the dealt order so Shuffle can restore it.
+  const cards = state.cards.slice();
+
+  const compare = SORTS[sortKey];
+  if (!compare) {
+    return cards;
+  }
+
+  // Sorting in JavaScript is stable, so cards that tie (same colour, same year,
+  // same rarity) stay in their dealt order -- which is random.
+  //
+  // Never add price as a tie-breaker here. It would line the grid up by value
+  // and hand the player every answer.
+  return cards.sort(compare);
+}
+
+/** Re-order the grid to match the chosen sort. */
+function applySort(sortKey) {
+  if (!Object.prototype.hasOwnProperty.call(SORTS, sortKey)) {
+    return;
+  }
+
+  state.sortKey = sortKey;
+
+  const grid = $("card-grid");
+  const fragment = document.createDocumentFragment();
+
+  // Appending an element that is already on the page MOVES it rather than
+  // copying it. So the same buttons get rearranged: images don't reload, and
+  // anything already selected stays selected.
+  sortedCards(sortKey).forEach(function (card) {
+    const button = state.cardElements[card.id];
+    if (button) {
+      fragment.appendChild(button);
+    }
+  });
+
+  grid.appendChild(fragment);
+  updateSortButtons();
+}
+
+/** Highlight whichever sort is currently in use. */
+function updateSortButtons() {
+  const buttons = document.querySelectorAll(".sort-button");
+
+  buttons.forEach(function (button) {
+    const isActive = button.dataset.sort === state.sortKey;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", isActive ? "true" : "false");
+  });
 }
 
 
@@ -656,8 +796,11 @@ async function startGame() {
   stopTimer();
   state.cards = [];
   state.selectedIds.clear();
+  state.cardElements = {};
+  state.sortKey = "random";
   state.roundIsOver = false;
   $("selected-count").textContent = "0";
+  updateSortButtons();
 
   showScreen("screen-loading");
 
@@ -700,6 +843,13 @@ $("submit-button").addEventListener("click", submitRound);
  * This is called "event delegation": the click bubbles up from the card
  * to the grid, and we work out which card it came from.
  */
+// One listener per sort button. They sit in the bar above the grid.
+document.querySelectorAll(".sort-button").forEach(function (button) {
+  button.addEventListener("click", function () {
+    applySort(button.dataset.sort);
+  });
+});
+
 $("card-grid").addEventListener("click", function (event) {
   const button = event.target.closest(".card");
   if (button) {
