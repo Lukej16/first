@@ -581,6 +581,21 @@ function toggleCard(button) {
   $("selected-count").textContent = String(state.selectedIds.size);
 }
 
+/**
+ * Show a card full-size, so its rules text is actually readable.
+ * Reuses the image already loaded in the grid -- no extra network request.
+ */
+function openCardPreview(card) {
+  $("card-preview-image").src = card.image;
+  $("card-preview-image").alt = card.name;
+  $("card-preview").hidden = false;
+}
+
+function closeCardPreview() {
+  $("card-preview").hidden = true;
+  $("card-preview-image").src = "";
+}
+
 
 /* -------------------------------------------------------------------------
    Sorting the grid.
@@ -891,6 +906,7 @@ async function startGame() {
   $("selected-count").textContent = "0";
   updateSortButtons();
   resetFilterChips();
+  closeCardPreview();
 
   showScreen("screen-loading");
 
@@ -964,5 +980,34 @@ $("card-grid").addEventListener("click", function (event) {
   const button = event.target.closest(".card");
   if (button) {
     toggleCard(button);
+  }
+});
+
+// Double-click (or double-tap) a card to see it full-size. A real
+// double-click fires two ordinary clicks first, so toggleCard() runs twice
+// from the same gesture -- selection flips on, then off again, netting back
+// to where it started.
+$("card-grid").addEventListener("dblclick", function (event) {
+  const button = event.target.closest(".card");
+  if (!button) return;
+
+  const card = state.cards.find(function (c) { return c.id === button.dataset.cardId; });
+  if (card) {
+    openCardPreview(card);
+  }
+});
+
+$("card-preview-close").addEventListener("click", closeCardPreview);
+
+// Clicking the dark backdrop (but not the card image itself) closes it too.
+$("card-preview").addEventListener("click", function (event) {
+  if (event.target === event.currentTarget) {
+    closeCardPreview();
+  }
+});
+
+document.addEventListener("keydown", function (event) {
+  if (event.key === "Escape" && !$("card-preview").hidden) {
+    closeCardPreview();
   }
 });
