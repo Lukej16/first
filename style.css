@@ -303,8 +303,10 @@ body {
   overflow: hidden;
   -webkit-user-select: none;
   user-select: none;
-  /* No transition here on purpose: selecting a card should feel instant, and
-     animating border-width would re-layout all 100 cards on every frame. */
+  /* Only transform/outline animate -- both are compositor-only, so this stays
+     smooth with 100 cards on screen. Never transition border-width here: it
+     would force a layout re-flow every frame (see .card.is-selected below). */
+  transition: transform 120ms ease, outline-color 120ms ease;
 }
 
 .card img {
@@ -319,6 +321,17 @@ body {
 .card:focus-visible {
   outline: 3px solid var(--ink);
   outline-offset: 2px;
+}
+
+/* A little lift and a highlight ring on hover -- pointer devices only, so a
+   tap on a touchscreen doesn't leave a card stuck looking "hovered". */
+@media (hover: hover) {
+  .card:hover {
+    outline: 3px solid var(--ink);
+    outline-offset: 2px;
+    transform: translateY(-4px) scale(1.03);
+    z-index: 1;
+  }
 }
 
 /* Hidden by an active type filter. Still in the DOM (and still selected, if
@@ -370,6 +383,59 @@ body {
   font-size: 14px;
   font-weight: 800;
   line-height: 1;
+}
+
+/* ---- Card preview overlay ------------------------------------------------
+   Double-click (or double-tap) a card to see it full-size. Reuses the image
+   already loaded in the grid, so opening it needs no extra network request.
+   ------------------------------------------------------------------------ */
+.card-preview {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.85);
+  cursor: zoom-out;
+}
+
+.card-preview[hidden] {
+  display: none;
+}
+
+.card-preview img {
+  max-width: 90vw;
+  max-height: 90vh;
+  aspect-ratio: 488 / 680;
+  object-fit: contain;
+  cursor: default;
+}
+
+.card-preview__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  appearance: none;
+  background: var(--paper);
+  color: var(--ink);
+  border: var(--hairline);
+  border-radius: 0;
+  width: 40px;
+  height: 40px;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.card-preview__close:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.card-preview__close:focus-visible {
+  outline: 2px solid var(--paper);
+  outline-offset: 2px;
 }
 
 /* ---- Results screen ----------------------------------------------------- */
