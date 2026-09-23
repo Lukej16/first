@@ -127,6 +127,8 @@ const state = {
   selectedIds: new Set(),    // the ids of the cards the player has clicked
   cardElements: {},          // card id -> its button on the page, for re-sorting
   sortKey: "random",         // which sort button is currently active
+  sortDirection: 1,          // 1 = ascending, -1 = descending (ignored by "random")
+  activeTypes: new Set(),    // card types the player is filtering down to; empty = show all
   roundEndsAt: 0,            // a timestamp (ms) for when the timer hits zero
   timerId: null,             // the id returned by setInterval, so we can stop it
   roundIsOver: false,        // guards against submitting twice
@@ -325,6 +327,9 @@ async function loadCards() {
         colorRank: colorSortRank(card),
         year: releaseYear(card),
         rarityRank: raritySortRank(card),
+        // Which of CARD_TYPES this card is (a card can be more than one,
+        // e.g. an Artifact Creature), for the type filter chips.
+        types: getCardTypes(card),
       });
     });
   }
@@ -466,6 +471,32 @@ function raritySortRank(card) {
   return position === -1 ? RARITY_ORDER.length : position;
 }
 
+// The card types players can filter by.
+const CARD_TYPES = [
+  "Creature", "Planeswalker", "Instant", "Sorcery",
+  "Enchantment", "Artifact", "Land", "Battle",
+];
+
+/**
+ * Which of CARD_TYPES a card is.
+ * Scryfall's type_line looks like "Artifact Creature — Construct" or
+ * "Legendary Enchantment — God". We only care about the words before the
+ * "—", and before any "//" on a split card. A card can match more than one
+ * type (an Artifact Creature matches both).
+ */
+function getCardTypes(card) {
+  const line = card.type_line ||
+    (card.card_faces && card.card_faces[0] && card.card_faces[0].type_line) ||
+    "";
+
+  const mainTypes = line.split("//")[0].split("—")[0].trim();
+  const words = mainTypes.split(/\s+/);
+
+  return CARD_TYPES.filter(function (type) {
+    return words.includes(type);
+  });
+}
+
 
 /* =========================================================================
    4. BUILDING THE CARD GRID
@@ -558,13 +589,23 @@ function toggleCard(button) {
    dealt, and it never touches what you have already selected.
    ---------------------------------------------------------------------- */
 
-// How each button orders the grid. "random" has no comparison because it means
-// "leave them in the order they were dealt".
+// How each button orders the grid, always written ascending. "random" has no
+// comparison because it means "leave them in the order they were dealt".
+// state.sortDirection flips the result for descending order.
 const SORTS = {
   random: null,
   color: function (a, b) { return a.colorRank - b.colorRank; },
-  year: function (a, b) { return b.year - a.year; },        // newest first
+  year: function (a, b) { return a.year - b.year; },
   rarity: function (a, b) { return a.rarityRank - b.rarityRank; },
+};
+
+// Which direction each sort opens in on its first click, so the default feel
+// stays the same as before direction toggling existed (newest year first,
+// rarest first, WUBRG order first).
+const DEFAULT_DIRECTIONS = {
+  color: 1,
+  year: -1,
+  rarity: 1,
 };
 
 /** The round's cards in the order a given button wants them. */
@@ -582,16 +623,27 @@ function sortedCards(sortKey) {
   //
   // Never add price as a tie-breaker here. It would line the grid up by value
   // and hand the player every answer.
-  return cards.sort(compare);
+  const direction = state.sortDirection;
+  return cards.sort(function (a, b) { return compare(a, b) * direction; });
 }
 
-/** Re-order the grid to match the chosen sort. */
+/**
+ * Re-order the grid to match the chosen sort.
+ * Clicking the sort that's already active flips its direction instead of
+ * doing nothing; clicking a different one activates it at its default
+ * direction.
+ */
 function applySort(sortKey) {
   if (!Object.prototype.hasOwnProperty.call(SORTS, sortKey)) {
     return;
   }
 
-  state.sortKey = sortKey;
+  if (sortKey === state.sortKey && sortKey !== "random") {
+    state.sortDirection *= -1;
+  } else {
+    state.sortKey = sortKey;
+    state.sortDirection = DEFAULT_DIRECTIONS[sortKey] || 1;
+  }
 
   const grid = $("card-grid");
   const fragment = document.createDocumentFragment();
@@ -610,7 +662,7 @@ function applySort(sortKey) {
   updateSortButtons();
 }
 
-/** Highlight whichever sort is currently in use. */
+/** Highlight whichever sort is currently in use, and draw its arrow. */
 function updateSortButtons() {
   const buttons = document.querySelectorAll(".sort-button");
 
@@ -618,6 +670,42 @@ function updateSortButtons() {
     const isActive = button.dataset.sort === state.sortKey;
     button.classList.toggle("is-active", isActive);
     button.setAttribute("aria-pressed", isActive ? "true" : "false");
+
+    const arrow = button.querySelector(".sort-button__arrow");
+    if (arrow) {
+      arrow.textContent = isActive
+        ? (state.sortDirection === 1 ? "▲" : "▼")
+        : "";
+    }
+  });
+}
+
+/**
+ * Show or hide cards by type.
+ * An empty state.activeTypes means "no filter", so every card is shown.
+ * Otherwise a card stays visible if it matches ANY selected type.
+ * This only toggles a class, the same way applySort only reorders -- it
+ * never touches selection state or rebuilds a single card.
+ */
+function applyFilters() {
+  state.cards.forEach(function (card) {
+    const button = state.cardElements[card.id];
+    if (!button) return;
+
+    const matches = state.activeTypes.size === 0 ||
+      card.types.some(function (type) { return state.activeTypes.has(type); });
+
+    button.classList.toggle("is-hidden", !matches);
+  });
+}
+
+/** Clear every filter chip back to off. */
+function resetFilterChips() {
+  state.activeTypes.clear();
+
+  document.querySelectorAll(".filter-chip").forEach(function (chip) {
+    chip.classList.remove("is-active");
+    chip.setAttribute("aria-pressed", "false");
   });
 }
 
@@ -798,9 +886,11 @@ async function startGame() {
   state.selectedIds.clear();
   state.cardElements = {};
   state.sortKey = "random";
+  state.sortDirection = 1;
   state.roundIsOver = false;
   $("selected-count").textContent = "0";
   updateSortButtons();
+  resetFilterChips();
 
   showScreen("screen-loading");
 
@@ -847,6 +937,26 @@ $("submit-button").addEventListener("click", submitRound);
 document.querySelectorAll(".sort-button").forEach(function (button) {
   button.addEventListener("click", function () {
     applySort(button.dataset.sort);
+  });
+});
+
+// One listener per filter chip. Multiple can be active at once -- a card
+// stays visible if it matches any of them.
+document.querySelectorAll(".filter-chip").forEach(function (chip) {
+  chip.addEventListener("click", function () {
+    const type = chip.dataset.type;
+
+    if (state.activeTypes.has(type)) {
+      state.activeTypes.delete(type);
+      chip.classList.remove("is-active");
+      chip.setAttribute("aria-pressed", "false");
+    } else {
+      state.activeTypes.add(type);
+      chip.classList.add("is-active");
+      chip.setAttribute("aria-pressed", "true");
+    }
+
+    applyFilters();
   });
 });
 
