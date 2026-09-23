@@ -220,9 +220,56 @@ body {
   color: var(--paper);
 }
 
+/* Empty until a sort is active, so it takes up no space on the others. */
+.sort-button__arrow {
+  margin-left: 6px;
+}
+
 .hud__count {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+/* ---- The type filter chips ----------------------------------------------
+   A second row under the timer/sort/submit row, so it can wrap freely on
+   narrow screens without squeezing the row above it.
+   ------------------------------------------------------------------------ */
+.hud__filters {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.filter-chip {
+  appearance: none;
+  background: var(--paper);
+  color: var(--ink);
+  border: var(--hairline);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.filter-chip:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.filter-chip:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.filter-chip.is-active {
+  background: var(--ink);
+  color: var(--paper);
 }
 
 /* ---- The card grid ------------------------------------------------------
@@ -272,6 +319,12 @@ body {
 .card:focus-visible {
   outline: 3px solid var(--ink);
   outline-offset: 2px;
+}
+
+/* Hidden by an active type filter. Still in the DOM (and still selected, if
+   it was) -- just not shown. */
+.card.is-hidden {
+  display: none;
 }
 
 /* Shown when a card's picture won't load: the name, so the card is still

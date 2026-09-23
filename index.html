@@ -67,14 +67,28 @@
            dealt, and never clears what you have selected. -->
       <div class="hud__sort" role="group" aria-label="Sort the cards">
         <button class="sort-button is-active" type="button" data-sort="random" aria-pressed="true">Shuffle</button>
-        <button class="sort-button" type="button" data-sort="color" aria-pressed="false">Color</button>
-        <button class="sort-button" type="button" data-sort="year" aria-pressed="false">Year</button>
-        <button class="sort-button" type="button" data-sort="rarity" aria-pressed="false">Rarity</button>
+        <button class="sort-button" type="button" data-sort="color" aria-pressed="false">Color<span class="sort-button__arrow"></span></button>
+        <button class="sort-button" type="button" data-sort="year" aria-pressed="false">Year<span class="sort-button__arrow"></span></button>
+        <button class="sort-button" type="button" data-sort="rarity" aria-pressed="false">Rarity<span class="sort-button__arrow"></span></button>
       </div>
 
       <div class="hud__right">
         <span class="hud__count"><strong id="selected-count">0</strong> selected</span>
         <button id="submit-button" class="button" type="button">Submit</button>
+      </div>
+
+      <!-- Filters cards down by type. Click again to turn a filter back off;
+           several can be on at once. A second row, so it wraps on phones
+           without fighting the timer/sort/submit row above it for space. -->
+      <div class="hud__filters" role="group" aria-label="Filter by card type">
+        <button class="filter-chip" type="button" data-type="Creature" aria-pressed="false">Creature</button>
+        <button class="filter-chip" type="button" data-type="Planeswalker" aria-pressed="false">Planeswalker</button>
+        <button class="filter-chip" type="button" data-type="Instant" aria-pressed="false">Instant</button>
+        <button class="filter-chip" type="button" data-type="Sorcery" aria-pressed="false">Sorcery</button>
+        <button class="filter-chip" type="button" data-type="Enchantment" aria-pressed="false">Enchantment</button>
+        <button class="filter-chip" type="button" data-type="Artifact" aria-pressed="false">Artifact</button>
+        <button class="filter-chip" type="button" data-type="Land" aria-pressed="false">Land</button>
+        <button class="filter-chip" type="button" data-type="Battle" aria-pressed="false">Battle</button>
       </div>
     </header>
 
