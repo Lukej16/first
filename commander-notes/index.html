@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <!-- viewport-fit=cover lets the page use the whole iPhone screen, including around the notch. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Commander Notes</title>
+
+  <!-- These make it behave like an app when you "Add to Home Screen" on an iPhone. -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Commander Notes" />
+  <meta name="theme-color" content="#f6f1e6" />
+
+  <!-- Caveat (handwriting) for headings, Inter for everything else.
+       If they fail to load, style.css falls back to system fonts. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <noscript>
+    <p class="noscript">This app needs JavaScript turned on to run.</p>
+  </noscript>
+
+  <!-- ==================================================================
+       SCREEN 1: HOME — the commander carousel
+       Only one ".screen" is visible at a time. script.js adds/removes
+       the "is-visible" class to switch between them.
+       ================================================================== -->
+  <section id="screen-home" class="screen is-visible">
+    <header class="home-header">
+      <h1 class="title">Commander Notes</h1>
+      <p class="tagline">Cards to add &amp; drop, one deck at a time.</p>
+    </header>
+
+    <!-- script.js fills this with one tile per commander, plus an "Add" tile at the end. -->
+    <div id="commander-carousel" class="carousel"></div>
+    <p id="home-hint" class="hint"></p>
+  </section>
+
+  <!-- ==================================================================
+       SCREEN 2: DECK — one commander's add / drop lists
+       ================================================================== -->
+  <section id="screen-deck" class="screen">
+    <nav class="top-bar">
+      <button id="back-button" class="button button--plain" type="button">‹ Decks</button>
+      <button id="delete-commander" class="button button--plain button--danger" type="button">Delete deck</button>
+    </nav>
+
+    <header class="deck-header">
+      <div id="deck-art" class="deck-art"></div>
+      <h2 id="deck-title" class="deck-title"></h2>
+    </header>
+
+    <!-- CARDS TO ADD (top) -->
+    <section class="list-section">
+      <div class="list-section__header">
+        <h3 class="list-section__title">Cards to add <span id="count-add" class="count"></span></h3>
+        <button class="button" type="button" data-open-search="add">+ Add</button>
+      </div>
+      <div id="row-add" class="row"></div>
+    </section>
+
+    <!-- CARDS TO DROP (bottom) -->
+    <section class="list-section">
+      <div class="list-section__header">
+        <h3 class="list-section__title">Cards to drop <span id="count-drop" class="count"></span></h3>
+        <button class="button" type="button" data-open-search="drop">+ Add</button>
+      </div>
+      <div id="row-drop" class="row"></div>
+    </section>
+  </section>
+
+  <!-- ==================================================================
+       SEARCH SHEET — pops up to find a commander or a card on Scryfall
+       <dialog> is a built-in pop-up. script.js opens it with showModal().
+       ================================================================== -->
+  <dialog id="sheet-search" class="sheet sheet--top">
+    <div class="sheet__body">
+      <div class="sheet__header">
+        <h2 id="search-title" class="sheet__title"></h2>
+        <button class="button button--plain" type="button" data-close-sheet>Cancel</button>
+      </div>
+      <label for="search-input" class="visually-hidden">Card name</label>
+      <input id="search-input" class="search-input" type="search"
+             placeholder="Start typing a card name…"
+             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+      <p id="search-status" class="status"></p>
+      <ul id="search-results" class="search-results"></ul>
+    </div>
+  </dialog>
+
+  <!-- ==================================================================
+       CARD SHEET — tap a card to see prices, where to buy, and your note
+       ================================================================== -->
+  <dialog id="sheet-card" class="sheet">
+    <div class="sheet__body">
+      <div class="sheet__grabber" aria-hidden="true"></div>
+      <div class="sheet__header">
+        <span id="card-list-label" class="label"></span>
+        <button class="button button--plain" type="button" data-close-sheet>Done</button>
+      </div>
+
+      <div id="card-image" class="card-sheet__image"></div>
+      <h2 id="card-name" class="card-sheet__name"></h2>
+      <p id="card-type" class="card-sheet__type"></p>
+
+      <h3 class="card-sheet__heading">Prices</h3>
+      <dl id="card-prices" class="prices"></dl>
+      <p id="price-status" class="status"></p>
+
+      <h3 class="card-sheet__heading">Buy it</h3>
+      <div id="card-buy-links" class="buy-links"></div>
+
+      <h3 class="card-sheet__heading"><label for="card-note">Note</label></h3>
+      <textarea id="card-note" class="note" rows="4"
+                placeholder="Why? e.g. &quot;Too slow, never cast it.&quot;"></textarea>
+
+      <div class="card-sheet__actions">
+        <button id="move-card" class="button" type="button"></button>
+        <button id="remove-card" class="button button--plain button--danger" type="button">Remove</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="script.js"></script>
+</body>
+</html>

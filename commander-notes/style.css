@@ -1,0 +1,595 @@
+/* =========================================================================
+   Commander Notes — styles
+   Black ink on paper. Faint ruled lines, handwritten headings,
+   and thin black borders so it feels like a notepad.
+   Designed for phones first; it just centres itself on bigger screens.
+   ========================================================================= */
+
+/* ---- Design tokens ------------------------------------------------------
+   Change a value here and it updates everywhere it is used.
+   ------------------------------------------------------------------------ */
+:root {
+  --paper: #f6f1e6;              /* page background, like notepad paper */
+  --paper-light: #fbf8f1;        /* slightly brighter paper for buttons and boxes */
+  --ink: #141414;                /* text and borders */
+  --ink-soft: #625d53;           /* secondary text */
+  --rule: rgba(20, 20, 20, 0.07);/* the faint ruled lines */
+  --rule-gap: 32px;              /* distance between ruled lines */
+  --line: 1.5px solid var(--ink);/* the border used throughout */
+  --radius: 10px;
+  --max-width: 560px;
+
+  --hand: "Caveat", "Marker Felt", "Bradley Hand", cursive;
+  --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Space for the iPhone notch and home bar. These are 0 on other devices. */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ---- Reset --------------------------------------------------------------
+   border-box means padding and borders count INSIDE an element's width.
+   ------------------------------------------------------------------------ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  color: var(--ink);
+  font-family: var(--body);
+  line-height: 1.45;
+  /* The ruled notepad lines: a 1px line every --rule-gap pixels. */
+  background-color: var(--paper);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 calc(var(--rule-gap) - 1px),
+    var(--rule) calc(var(--rule-gap) - 1px) var(--rule-gap)
+  );
+  /* Stops the grey flash when you tap something on iOS. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+/* ---- Screens ------------------------------------------------------------
+   Every screen is hidden unless it has the "is-visible" class.
+   ------------------------------------------------------------------------ */
+.screen {
+  display: none;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: calc(var(--safe-top) + 16px) 16px calc(var(--safe-bottom) + 32px);
+}
+
+.screen.is-visible {
+  display: block;
+}
+
+/* ---- Buttons ------------------------------------------------------------ */
+.button {
+  min-height: 40px;
+  padding: 8px 16px;
+  border: var(--line);
+  border-radius: 999px;
+  background: var(--paper-light);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button:active {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* A borderless text button, for "Back", "Cancel", "Done". */
+.button--plain {
+  border-color: transparent;
+  background: none;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+.button--plain:active {
+  background: none;
+  color: var(--ink-soft);
+}
+
+/* Still black and white: danger buttons are just underlined. */
+.button--danger {
+  text-decoration: underline;
+  font-weight: 400;
+}
+
+/* ---- Home screen -------------------------------------------------------- */
+.home-header {
+  padding: 24px 0 12px;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--hand);
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.tagline {
+  margin: 8px 0 0;
+  color: var(--ink-soft);
+}
+
+.hint {
+  margin: 0;
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+/* ---- The commander carousel ---------------------------------------------
+   A row you swipe left and right. scroll-snap makes each tile
+   "click" into the middle of the screen when you let go.
+   ------------------------------------------------------------------------ */
+.carousel {
+  display: flex;
+  gap: 18px;
+  /* Bleed to the screen edges so tiles slide in from off-screen. */
+  margin: 0 -16px;
+  padding: 16px 16px 20px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding: 0 16px;
+  scrollbar-width: none;            /* hide the scrollbar (Firefox) */
+}
+
+.carousel::-webkit-scrollbar {
+  display: none;                    /* hide the scrollbar (Safari/Chrome) */
+}
+
+.commander-tile {
+  flex: 0 0 min(68vw, 250px);
+  scroll-snap-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.commander-tile__name {
+  font-family: var(--hand);
+  font-size: 1.6rem;
+  line-height: 1.1;
+}
+
+.commander-tile__counts {
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+}
+
+/* The dashed "+ Add a commander" tile at the end of the carousel. */
+.commander-tile__blank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 63 / 88;
+  border: 2px dashed var(--ink);
+  border-radius: 4.75% / 3.4%;
+  font-family: var(--hand);
+  font-size: 4rem;
+}
+
+/* ---- Card pictures ------------------------------------------------------
+   Real Magic cards are 63mm x 88mm, so aspect-ratio keeps that shape
+   even before the picture has loaded.
+   ------------------------------------------------------------------------ */
+.card-image {
+  width: 100%;
+  aspect-ratio: 63 / 88;
+  object-fit: cover;
+  border-radius: 4.75% / 3.4%;
+  background: var(--paper-light);
+  /* A hard offset shadow, like a card resting on paper. */
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+/* Shown when a card has no picture: just the name in a box. */
+.card-image--missing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border: var(--line);
+  font-family: var(--hand);
+  font-size: 1.2rem;
+  text-align: center;
+}
+
+/* ---- Deck screen -------------------------------------------------------- */
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.deck-header {
+  padding: 8px 0 4px;
+}
+
+.deck-art img {
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  object-fit: cover;
+  border: var(--line);
+  border-radius: var(--radius);
+  /* Black and white: the artwork is shown in greyscale to match the notepad. */
+  filter: grayscale(1) contrast(1.05);
+}
+
+.deck-title {
+  margin: 12px 0 0;
+  font-family: var(--hand);
+  font-size: 2.4rem;
+  line-height: 1.05;
+}
+
+.list-section {
+  padding: 18px 0 8px;
+}
+
+/* A dashed line between "Cards to add" and "Cards to drop", like a torn edge. */
+.list-section + .list-section {
+  border-top: 2px dashed var(--ink);
+  margin-top: 8px;
+}
+
+.list-section__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.list-section__title {
+  margin: 0;
+  font-family: var(--hand);
+  font-size: 1.9rem;
+  font-weight: 700;
+}
+
+.count {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 0 6px;
+  border: var(--line);
+  border-radius: 999px;
+  font-family: var(--body);
+  font-size: 0.8rem;
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* The row of cards you swipe sideways. */
+.row {
+  display: flex;
+  gap: 12px;
+  margin: 0 -16px;
+  padding: 14px 16px 16px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scroll-padding: 0 16px;
+  scrollbar-width: none;
+}
+
+.row::-webkit-scrollbar {
+  display: none;
+}
+
+.row-card {
+  position: relative;
+  flex: 0 0 118px;
+  scroll-snap-align: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* The little pencil badge on cards that have a note. */
+.row-card__note-flag {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: var(--line);
+  border-radius: 50%;
+  background: var(--paper-light);
+  font-size: 0.8rem;
+}
+
+.row-empty {
+  margin: 0;
+  padding: 18px 0;
+  color: var(--ink-soft);
+  font-family: var(--hand);
+  font-size: 1.35rem;
+}
+
+/* ---- Pop-up sheets ------------------------------------------------------
+   <dialog> elements styled as sheets that slide up from the bottom.
+   ------------------------------------------------------------------------ */
+.sheet {
+  width: 100%;
+  max-width: var(--max-width);
+  max-height: 90dvh;
+  margin: auto auto 0;          /* sit at the bottom of the screen */
+  padding: 0;
+  border: var(--line);
+  border-bottom: 0;
+  border-radius: 18px 18px 0 0;
+  background: var(--paper);
+  color: var(--ink);
+  overflow-y: auto;
+}
+
+.sheet[open] {
+  animation: slide-up 0.22s ease-out;
+}
+
+/* The search sheet sits at the top instead, so the iPhone keyboard doesn't cover it. */
+.sheet--top {
+  width: calc(100% - 24px);
+  margin: calc(var(--safe-top) + 12px) auto auto;
+  border-bottom: var(--line);
+  border-radius: 18px;
+}
+
+.sheet--top[open] {
+  animation: drop-down 0.2s ease-out;
+}
+
+.sheet::backdrop {
+  background: rgba(20, 20, 20, 0.45);
+}
+
+.sheet__body {
+  padding: 12px 18px calc(var(--safe-bottom) + 20px);
+}
+
+.sheet--top .sheet__body {
+  padding-bottom: 18px;
+}
+
+.sheet__grabber {
+  width: 40px;
+  height: 5px;
+  margin: 0 auto 6px;
+  border-radius: 999px;
+  background: var(--ink);
+  opacity: 0.25;
+}
+
+.sheet__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.sheet__title {
+  margin: 0;
+  font-family: var(--hand);
+  font-size: 2rem;
+}
+
+@keyframes slide-up {
+  from { transform: translateY(40px); opacity: 0; }
+}
+
+@keyframes drop-down {
+  from { transform: translateY(-20px); opacity: 0; }
+}
+
+/* ---- Search ------------------------------------------------------------- */
+.search-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: var(--line);
+  border-radius: var(--radius);
+  background: var(--paper-light);
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px; /* 16px or bigger stops iPhones zooming in when you tap the box */
+}
+
+.search-input:focus {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.search-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.search-results button {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 4px;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.search-results button:active {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.status {
+  min-height: 1.2em;
+  margin: 8px 0;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+.status:empty {
+  margin: 0;
+}
+
+/* ---- Card sheet --------------------------------------------------------- */
+.label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.card-sheet__image {
+  width: min(62vw, 240px);
+  margin: 6px auto 16px;
+}
+
+.card-sheet__name {
+  margin: 0;
+  font-family: var(--hand);
+  font-size: 2.2rem;
+  line-height: 1.05;
+  text-align: center;
+}
+
+.card-sheet__type {
+  margin: 4px 0 0;
+  color: var(--ink-soft);
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.card-sheet__heading {
+  margin: 22px 0 6px;
+  font-family: var(--hand);
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+/* Prices laid out like a two-column ledger. */
+.prices {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  margin: 0;
+  border-top: var(--line);
+}
+
+.prices dt,
+.prices dd {
+  margin: 0;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.prices dd {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.buy-links {
+  display: grid;
+  gap: 8px;
+}
+
+.buy-link {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 46px;
+  padding: 10px 16px;
+  border: var(--line);
+  border-radius: var(--radius);
+  background: var(--paper-light);
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.buy-link:active {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* The note box has its own ruled lines, lined up with the text. */
+.note {
+  display: block;
+  width: 100%;
+  padding: 0 4px;
+  border: 0;
+  border-top: var(--line);
+  background-color: transparent;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 27px,
+    rgba(20, 20, 20, 0.18) 27px 28px
+  );
+  color: var(--ink);
+  font-family: var(--hand);
+  font-size: 1.4rem;
+  line-height: 28px;
+  resize: vertical;
+}
+
+.note:focus {
+  outline: none;
+}
+
+.card-sheet__actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+/* ---- Small utilities ---------------------------------------------------- */
+
+/* Hides something visually but keeps it for screen readers. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.noscript {
+  padding: 16px;
+  text-align: center;
+}
