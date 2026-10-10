@@ -11,6 +11,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Commander Notes" />
   <meta name="theme-color" content="#f6f1e6" />
+  <link rel="apple-touch-icon" href="icon-180.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
 
   <!-- Caveat (handwriting) for headings, Inter for everything else.
        If they fail to load, style.css falls back to system fonts. -->
@@ -32,6 +34,10 @@
        the "is-visible" class to switch between them.
        ================================================================== -->
   <section id="screen-home" class="screen is-visible">
+    <nav class="top-bar top-bar--end">
+      <button id="open-backup" class="button button--plain" type="button">Backup</button>
+    </nav>
+
     <header class="home-header">
       <h1 class="title">Commander Notes</h1>
       <p class="tagline">Cards to add &amp; drop, one deck at a time.</p>
@@ -40,6 +46,9 @@
     <!-- script.js fills this with one tile per commander, plus an "Add" tile at the end. -->
     <div id="commander-carousel" class="carousel"></div>
     <p id="home-hint" class="hint"></p>
+
+    <!-- The big button for jotting a card down mid-game. Hidden until you have a deck. -->
+    <button id="quick-note" class="quick-note" type="button" hidden>✎ Quick note</button>
   </section>
 
   <!-- ==================================================================
@@ -48,7 +57,7 @@
   <section id="screen-deck" class="screen">
     <nav class="top-bar">
       <button id="back-button" class="button button--plain" type="button">‹ Decks</button>
-      <button id="delete-commander" class="button button--plain button--danger" type="button">Delete deck</button>
+      <button id="open-history" class="button button--plain" type="button">History</button>
     </nav>
 
     <header class="deck-header">
@@ -58,7 +67,14 @@
 
     <!-- CARDS TO ADD (top half of the screen) -->
     <section class="list-section">
-      <h3 class="list-section__title">Cards to add <span id="count-add" class="count"></span></h3>
+      <div class="list-section__header">
+        <h3 class="list-section__title">Cards to add <span id="count-add" class="count"></span></h3>
+        <!-- The shopping list: rough total price and a "Copy" button. -->
+        <div id="shopping" class="shopping">
+          <span id="add-total" class="shopping__total"></span>
+          <button id="copy-add" class="button button--small" type="button">Copy list</button>
+        </div>
+      </div>
       <!-- Looks like a line to write on. Tapping it opens the card search. -->
       <button class="add-field" type="button" data-open-search="add">+ Type a card to add…</button>
       <div id="row-add" class="row"></div>
@@ -66,8 +82,9 @@
 
     <!-- CARDS TO DROP (bottom half of the screen) -->
     <section class="list-section">
-      <h3 class="list-section__title">Cards to drop <span id="count-drop" class="count"></span></h3>
-      <!-- Looks like a line to write on. Tapping it opens the card search. -->
+      <div class="list-section__header">
+        <h3 class="list-section__title">Cards to drop <span id="count-drop" class="count"></span></h3>
+      </div>
       <button class="add-field" type="button" data-open-search="drop">+ Type a card to drop…</button>
       <div id="row-drop" class="row"></div>
     </section>
@@ -83,6 +100,16 @@
         <h2 id="search-title" class="sheet__title"></h2>
         <button class="button button--plain" type="button" data-close-sheet>Cancel</button>
       </div>
+
+      <!-- Only shown for "Quick note": pick the deck and add or drop. -->
+      <div id="quick-controls" class="quick-controls" hidden>
+        <div id="quick-decks" class="chips chips--scroll"></div>
+        <div class="segmented" role="group" aria-label="Add or drop">
+          <button type="button" data-quick-list="add">To add</button>
+          <button type="button" data-quick-list="drop">To drop</button>
+        </div>
+      </div>
+
       <label for="search-input" class="visually-hidden">Card name</label>
       <input id="search-input" class="search-input" type="search"
              placeholder="Start typing a card name…"
@@ -93,7 +120,7 @@
   </dialog>
 
   <!-- ==================================================================
-       CARD SHEET — tap a card to see prices, where to buy, and your note
+       CARD SHEET — tap a card to see why, swaps, prices and where to buy
        ================================================================== -->
   <dialog id="sheet-card" class="sheet">
     <div class="sheet__body">
@@ -108,8 +135,24 @@
       <p id="card-type" class="card-sheet__type"></p>
 
       <h3 class="card-sheet__heading"><label for="card-note">Why?</label></h3>
-      <textarea id="card-note" class="note" rows="4"
-                placeholder="e.g. &quot;Too slow, never cast it.&quot;"></textarea>
+      <!-- One-tap reasons. script.js fills these from SETTINGS.REASONS. -->
+      <div id="card-reasons" class="chips"></div>
+      <textarea id="card-note" class="note" rows="3"
+                placeholder="Anything else? e.g. &quot;Never cast it on curve.&quot;"></textarea>
+
+      <!-- Strike counter: how many games this card has stood out. -->
+      <div class="strikes">
+        <span id="strike-label" class="strikes__label"></span>
+        <div class="strikes__buttons">
+          <button id="strike-minus" class="round-button" type="button" aria-label="One less">−</button>
+          <button id="strike-plus" class="round-button" type="button" aria-label="One more">+</button>
+        </div>
+      </div>
+
+      <h3 class="card-sheet__heading">Swap</h3>
+      <div id="card-swap"></div>
+
+      <button id="done-card" class="button button--ink button--wide" type="button">✓ I made this change</button>
 
       <h3 class="card-sheet__heading">Prices</h3>
       <dl id="card-prices" class="prices"></dl>
@@ -124,6 +167,49 @@
       </div>
     </div>
   </dialog>
+
+  <!-- ==================================================================
+       HISTORY SHEET — changes you've already made to this deck
+       ================================================================== -->
+  <dialog id="sheet-history" class="sheet">
+    <div class="sheet__body">
+      <div class="sheet__grabber" aria-hidden="true"></div>
+      <div class="sheet__header">
+        <h2 class="sheet__title">Changes made</h2>
+        <button class="button button--plain" type="button" data-close-sheet>Done</button>
+      </div>
+      <ul id="history-list" class="history-list"></ul>
+      <p id="history-empty" class="row-empty">Nothing yet. Tap a card and hit "I made this change" once you've updated the deck.</p>
+
+      <div class="danger-zone">
+        <button id="delete-commander" class="button button--plain button--danger" type="button">Delete this deck</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ==================================================================
+       BACKUP SHEET — save your notes to a file, or load them back
+       ================================================================== -->
+  <dialog id="sheet-backup" class="sheet">
+    <div class="sheet__body">
+      <div class="sheet__grabber" aria-hidden="true"></div>
+      <div class="sheet__header">
+        <h2 class="sheet__title">Backup &amp; restore</h2>
+        <button class="button button--plain" type="button" data-close-sheet>Done</button>
+      </div>
+      <p class="muted">Your notes are saved on this phone. Save a backup file now and then, so you never lose them.</p>
+      <button id="export-button" class="button button--ink button--wide" type="button">Save a backup file</button>
+      <!-- A file picker styled as a button. -->
+      <label class="button button--wide file-button">
+        Load a backup file
+        <input id="import-input" type="file" accept=".json,application/json" class="visually-hidden" />
+      </label>
+      <p id="backup-status" class="status"></p>
+    </div>
+  </dialog>
+
+  <!-- Little pop-up messages like "Copied" appear here. -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script src="script.js"></script>
 </body>
