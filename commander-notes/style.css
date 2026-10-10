@@ -1,0 +1,936 @@
+/* =========================================================================
+   Commander Notes — styles
+   Black ink on paper. Faint ruled lines, handwritten headings,
+   and thin black borders so it feels like a notepad.
+   Designed for phones first; it just centres itself on bigger screens.
+   ========================================================================= */
+
+/* ---- Design tokens ------------------------------------------------------
+   Change a value here and it updates everywhere it is used.
+   ------------------------------------------------------------------------ */
+:root {
+  --paper: #f6f1e6;              /* page background, like notepad paper */
+  --paper-light: #fbf8f1;        /* slightly brighter paper for buttons and boxes */
+  --ink: #141414;                /* text and borders */
+  --ink-soft: #625d53;           /* secondary text */
+  --rule: rgba(20, 20, 20, 0.07);/* the faint ruled lines */
+  --rule-gap: 32px;              /* distance between ruled lines */
+  --line: 1.5px solid var(--ink);/* the border used throughout */
+  --radius: 10px;
+  --max-width: 560px;
+
+  --hand: "Caveat", "Marker Felt", "Bradley Hand", cursive;
+  --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Space for the iPhone notch and home bar. These are 0 on other devices. */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ---- Reset --------------------------------------------------------------
+   border-box means padding and borders count INSIDE an element's width.
+   ------------------------------------------------------------------------ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  color: var(--ink);
+  font-family: var(--body);
+  line-height: 1.45;
+  /* The ruled notepad lines: a 1px line every --rule-gap pixels. */
+  background-color: var(--paper);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 calc(var(--rule-gap) - 1px),
+    var(--rule) calc(var(--rule-gap) - 1px) var(--rule-gap)
+  );
+  /* Stops the grey flash when you tap something on iOS. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+/* ---- Screens ------------------------------------------------------------
+   Every screen is hidden unless it has the "is-visible" class.
+   ------------------------------------------------------------------------ */
+.screen {
+  display: none;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: calc(var(--safe-top) + 16px) 16px calc(var(--safe-bottom) + 32px);
+}
+
+.screen.is-visible {
+  display: block;
+}
+
+/* ---- Buttons ------------------------------------------------------------ */
+.button {
+  min-height: 40px;
+  padding: 8px 16px;
+  border: var(--line);
+  border-radius: 999px;
+  background: var(--paper-light);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button:active {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* A borderless text button, for "Back", "Cancel", "Done". */
+.button--plain {
+  border-color: transparent;
+  background: none;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+.button--plain:active {
+  background: none;
+  color: var(--ink-soft);
+}
+
+/* Still black and white: danger buttons are just underlined. */
+.button--danger {
+  text-decoration: underline;
+  font-weight: 400;
+}
+
+/* Smaller button, for things like "Copy list" and "Undo". */
+.button--small {
+  min-height: 32px;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+}
+
+/* Solid black button for the main action on a sheet. */
+.button--ink {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.button--ink:active {
+  background: var(--ink-soft);
+}
+
+.button--wide {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-height: 48px;
+  margin-top: 12px;
+  font-size: 1rem;
+}
+
+/* A text link that is really a button (e.g. the swap partner's name). */
+.link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.round-button {
+  width: 40px;
+  height: 40px;
+  border: var(--line);
+  border-radius: 50%;
+  background: var(--paper-light);
+  color: var(--ink);
+  font: inherit;
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.round-button:active {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.round-button:disabled {
+  opacity: 0.3;
+}
+
+/* ---- Chips --------------------------------------------------------------
+   Small pill buttons you tap on and off: reasons, decks, swap choices.
+   aria-pressed="true" is how script.js marks the ones that are on.
+   ------------------------------------------------------------------------ */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+/* One line that scrolls sideways instead of wrapping (the deck picker). */
+.chips--scroll {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.chips--scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.chip {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 6px 14px;
+  border: var(--line);
+  border-radius: 999px;
+  background: var(--paper-light);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.chip[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* Two buttons joined together, like a light switch: To add | To drop. */
+.segmented {
+  display: flex;
+  margin-bottom: 12px;
+  border: var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.segmented button {
+  flex: 1;
+  min-height: 38px;
+  border: 0;
+  background: var(--paper-light);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.segmented button + button {
+  border-left: var(--line);
+}
+
+.segmented button[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.muted {
+  margin: 0 0 10px;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+/* ---- Home screen -------------------------------------------------------- */
+/* Leave room at the bottom so the Quick note button never covers anything. */
+#screen-home {
+  padding-bottom: calc(var(--safe-bottom) + 96px);
+}
+
+.home-header {
+  padding: 0 0 4px;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--hand);
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.tagline {
+  margin: 8px 0 0;
+  color: var(--ink-soft);
+}
+
+.hint {
+  margin: 0;
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+/* The big floating "✎ Quick note" button at the bottom of the home screen. */
+.quick-note {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--safe-bottom) + 18px);
+  transform: translateX(-50%);
+  min-height: 52px;
+  padding: 12px 28px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--hand);
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 3px 3px 0 rgba(20, 20, 20, 0.25);
+  cursor: pointer;
+}
+
+.quick-note:active {
+  transform: translateX(-50%) translateY(2px);
+}
+
+/* ---- The commander carousel ---------------------------------------------
+   A row you swipe left and right. scroll-snap makes each tile
+   "click" into the middle of the screen when you let go.
+   ------------------------------------------------------------------------ */
+.carousel {
+  display: flex;
+  gap: 18px;
+  /* Bleed to the screen edges so tiles slide in from off-screen. */
+  margin: 0 -16px;
+  padding: 16px 16px 20px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding: 0 16px;
+  scrollbar-width: none;            /* hide the scrollbar (Firefox) */
+}
+
+.carousel::-webkit-scrollbar {
+  display: none;                    /* hide the scrollbar (Safari/Chrome) */
+}
+
+.commander-tile {
+  flex: 0 0 min(58vw, 240px);
+  scroll-snap-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.commander-tile__name {
+  font-family: var(--hand);
+  font-size: 1.6rem;
+  line-height: 1.1;
+}
+
+.commander-tile__counts {
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+}
+
+/* The dashed "+ Add a commander" tile at the end of the carousel. */
+.commander-tile__blank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 63 / 88;
+  border: 2px dashed var(--ink);
+  border-radius: 4.75% / 3.4%;
+  font-family: var(--hand);
+  font-size: 4rem;
+}
+
+/* ---- Card pictures ------------------------------------------------------
+   Real Magic cards are 63mm x 88mm, so aspect-ratio keeps that shape
+   even before the picture has loaded.
+   ------------------------------------------------------------------------ */
+.card-image {
+  width: 100%;
+  aspect-ratio: 63 / 88;
+  object-fit: cover;
+  border-radius: 4.75% / 3.4%;
+  background: var(--paper-light);
+  /* A hard offset shadow, like a card resting on paper. */
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+/* Shown when a card has no picture: just the name in a box. */
+.card-image--missing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border: var(--line);
+  font-family: var(--hand);
+  font-size: 1.2rem;
+  text-align: center;
+}
+
+/* ---- Deck screen --------------------------------------------------------
+   The screen is exactly one phone-screen tall. The two list sections
+   share the leftover space equally, so "Cards to drop" starts halfway down.
+   ------------------------------------------------------------------------ */
+#screen-deck.is-visible {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.top-bar--end {
+  justify-content: flex-end;
+}
+
+.deck-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0 2px;
+}
+
+.deck-art:empty {
+  display: none;
+}
+
+/* A small round picture of the commander's artwork. */
+.deck-art img {
+  width: 52px;
+  height: 52px;
+  object-fit: cover;
+  border: var(--line);
+  border-radius: 50%;
+  /* Black and white: the artwork is shown in greyscale to match the notepad. */
+  filter: grayscale(1) contrast(1.05);
+}
+
+.deck-title {
+  margin: 0;
+  font-family: var(--hand);
+  font-size: 2.1rem;
+  line-height: 1.05;
+}
+
+.list-section {
+  flex: 1 1 0;          /* both sections get an equal share of the height */
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 0 0;
+}
+
+/* A dashed line between "Cards to add" and "Cards to drop", like a torn edge. */
+.list-section + .list-section {
+  border-top: 2px dashed var(--ink);
+  margin-top: 8px;
+}
+
+.list-section__title {
+  margin: 0;
+  font-family: var(--hand);
+  font-size: 1.9rem;
+  font-weight: 700;
+}
+
+.list-section__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+/* The shopping total and "Copy list" button next to "Cards to add". */
+.shopping {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shopping__total {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9rem;
+}
+
+/* "+ Type a card to add…" — looks like a blank line on the notepad. */
+.add-field {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 4px;
+  padding: 6px 2px;
+  border: 0;
+  border-bottom: var(--line);
+  background: none;
+  color: var(--ink-soft);
+  font-family: var(--hand);
+  font-size: 1.35rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.add-field:active {
+  color: var(--ink);
+}
+
+.count {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 0 6px;
+  border: var(--line);
+  border-radius: 999px;
+  font-family: var(--body);
+  font-size: 0.8rem;
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* The row of cards you swipe sideways. It fills the rest of its half. */
+.row {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 12px;
+  margin: 0 -16px;
+  padding: 14px 16px 16px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scroll-padding: 0 16px;
+  scrollbar-width: none;
+}
+
+.row::-webkit-scrollbar {
+  display: none;
+}
+
+/* Each card is as tall as the row (up to 220px) and keeps the card shape. */
+.row-card {
+  position: relative;
+  flex: 0 0 auto;
+  height: 100%;
+  max-height: 220px;
+  aspect-ratio: 63 / 88;
+  scroll-snap-align: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* The little badges on a card's corner: ✎ note, ×3 strikes, ⇄ swap. */
+.row-card__badges {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: flex;
+  gap: 3px;
+}
+
+.badge {
+  min-width: 26px;
+  height: 26px;
+  padding: 0 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: var(--line);
+  border-radius: 999px;
+  background: var(--paper-light);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.row-card .card-image {
+  height: 100%;
+}
+
+.row-empty {
+  margin: 0;
+  padding: 18px 0;
+  color: var(--ink-soft);
+  font-family: var(--hand);
+  font-size: 1.35rem;
+}
+
+/* ---- Pop-up sheets ------------------------------------------------------
+   <dialog> elements styled as sheets that slide up from the bottom.
+   ------------------------------------------------------------------------ */
+.sheet {
+  width: 100%;
+  max-width: var(--max-width);
+  max-height: 90dvh;
+  margin: auto auto 0;          /* sit at the bottom of the screen */
+  padding: 0;
+  border: var(--line);
+  border-bottom: 0;
+  border-radius: 18px 18px 0 0;
+  background: var(--paper);
+  color: var(--ink);
+  overflow-y: auto;
+}
+
+.sheet[open] {
+  animation: slide-up 0.22s ease-out;
+}
+
+/* The search sheet sits at the top instead, so the iPhone keyboard doesn't cover it. */
+.sheet--top {
+  width: calc(100% - 24px);
+  margin: calc(var(--safe-top) + 12px) auto auto;
+  border-bottom: var(--line);
+  border-radius: 18px;
+}
+
+.sheet--top[open] {
+  animation: drop-down 0.2s ease-out;
+}
+
+.sheet::backdrop {
+  background: rgba(20, 20, 20, 0.45);
+}
+
+.sheet__body {
+  padding: 12px 18px calc(var(--safe-bottom) + 20px);
+}
+
+.sheet--top .sheet__body {
+  padding-bottom: 18px;
+}
+
+.sheet__grabber {
+  width: 40px;
+  height: 5px;
+  margin: 0 auto 6px;
+  border-radius: 999px;
+  background: var(--ink);
+  opacity: 0.25;
+}
+
+.sheet__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.sheet__title {
+  margin: 0;
+  font-family: var(--hand);
+  font-size: 2rem;
+}
+
+@keyframes slide-up {
+  from { transform: translateY(40px); opacity: 0; }
+}
+
+@keyframes drop-down {
+  from { transform: translateY(-20px); opacity: 0; }
+}
+
+/* ---- Search ------------------------------------------------------------- */
+.search-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: var(--line);
+  border-radius: var(--radius);
+  background: var(--paper-light);
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px; /* 16px or bigger stops iPhones zooming in when you tap the box */
+}
+
+.search-input:focus {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.search-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.search-results button {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 4px;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.search-results button:active {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.status {
+  min-height: 1.2em;
+  margin: 8px 0;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+.status:empty {
+  margin: 0;
+}
+
+/* ---- Card sheet --------------------------------------------------------- */
+.label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.card-sheet__image {
+  width: min(62vw, 240px);
+  margin: 6px auto 16px;
+}
+
+.card-sheet__name {
+  margin: 0;
+  font-family: var(--hand);
+  font-size: 2.2rem;
+  line-height: 1.05;
+  text-align: center;
+}
+
+.card-sheet__type {
+  margin: 4px 0 0;
+  color: var(--ink-soft);
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.card-sheet__heading {
+  margin: 22px 0 6px;
+  font-family: var(--hand);
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+/* Prices laid out like a two-column ledger. */
+.prices {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  margin: 0;
+  border-top: var(--line);
+}
+
+.prices dt,
+.prices dd {
+  margin: 0;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.prices dd {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.buy-links {
+  display: grid;
+  gap: 8px;
+}
+
+.buy-link {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 46px;
+  padding: 10px 16px;
+  border: var(--line);
+  border-radius: var(--radius);
+  background: var(--paper-light);
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.buy-link:active {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* The note box has its own ruled lines, lined up with the text. */
+.note {
+  display: block;
+  width: 100%;
+  padding: 0 4px;
+  border: 0;
+  border-top: var(--line);
+  background-color: transparent;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 27px,
+    rgba(20, 20, 20, 0.18) 27px 28px
+  );
+  color: var(--ink);
+  font-family: var(--hand);
+  font-size: 1.4rem;
+  line-height: 28px;
+  resize: vertical;
+}
+
+.note:focus {
+  outline: none;
+}
+
+.card-sheet__actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+/* Strike counter row: "Let me down 3 times   [−] [+]" */
+.strikes {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.strikes__label {
+  font-weight: 600;
+}
+
+.strikes__buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.swap-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  margin: 0;
+}
+
+.quick-controls {
+  margin-bottom: 4px;
+}
+
+.file-button {
+  cursor: pointer;
+}
+
+/* ---- History sheet ------------------------------------------------------ */
+.history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: var(--line);
+}
+
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.history-item__name {
+  display: block;
+  font-weight: 600;
+}
+
+.history-item__meta {
+  display: block;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+}
+
+.danger-zone {
+  margin-top: 28px;
+  padding-top: 12px;
+  border-top: 2px dashed var(--ink);
+  text-align: center;
+}
+
+/* ---- Toast: the little message that slides up from the bottom ----------- */
+.toast {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: calc(var(--safe-bottom) + 84px);
+  max-width: calc(var(--max-width) - 32px);
+  margin: 0 auto;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  background: var(--ink);
+  color: var(--paper);
+  text-align: center;
+  font-size: 0.95rem;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.2s, transform 0.2s;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.toast.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ---- Small utilities ---------------------------------------------------- */
+
+/* Hides something visually but keeps it for screen readers. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* The "hidden" attribute can lose to other rules; this makes sure it wins. */
+[hidden] {
+  display: none !important;
+}
+
+.noscript {
+  padding: 16px;
+  text-align: center;
+}
